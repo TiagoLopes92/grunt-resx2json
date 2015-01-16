@@ -46,6 +46,7 @@ module.exports = function(grunt) {
       return {src: filename, locale: locale, dest: rename(filename, options), namespace: namespace};
     };
 
+    grunt.log.writeln('Found ' + this.filesSrc.length + ' files to process.');
 
     var filesByLocale =
       _.chain(this.filesSrc)
@@ -90,7 +91,7 @@ module.exports = function(grunt) {
     if (this.errorCount) { return false; }
 
     // Otherwise, print a success message.
-    grunt.log.writeln('File converted..');
+    grunt.log.writeln('Finished JSON generation.');
   });
 
   var parseFile = function(fileContent,lang) {
