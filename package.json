@@ -1,5 +1,5 @@
 {
-  "name": "grunt-resx2json-2",
+  "name": "grunt-resx2json",
   "description": "Changing resx files to json",
   "version": "0.4.0",
   "homepage": "https://github.com/duereg/grunt-resx2json",
