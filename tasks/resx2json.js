@@ -1,6 +1,5 @@
-var xml2js = require('xml2js'),
-  _ = require("underscore"),
-  extend = require('xtend');
+var xml2js = require('xml2js');
+var _ = require('underscore');
 
 module.exports = function(grunt) {
 
@@ -10,10 +9,22 @@ module.exports = function(grunt) {
 
   grunt.registerMultiTask('resx2json', 'Convert resx to a json file.', function() {
     var task = this;
+    var allLocales = {};
+
     var localeExtractor = function(src, options){
         var match = options.localePattern.exec(src);
-        return match ? match[1] : options.defaultLocale;
+        return match ? match[0] : options.defaultLocale;
     };
+
+    var options = task.options({
+      defaultLocale: 'en-US',
+      concat: false,
+      dest: 'dist/',
+      prefix: 'output',
+      ext: '.json',
+      localePattern: /[a-z]{2}-[A-Z]{2}/,
+      localeExtractor: localeExtractor
+    });
 
     var rename = function(src, options){
       if (!options) options = src;
@@ -21,36 +32,46 @@ module.exports = function(grunt) {
       if (options.concat){
         filename = options.prefix+options.ext;
       } else {
-        filename = (options.prefix ? options.prefix + '-' : '') + options.localeExtractor(src, options) + options.ext;
+        filename = (options.prefix ? options.prefix + '.' : '') + options.localeExtractor(src, options) + options.ext;
       }
       return filename;
     };
-    var allLocales = {};
-    var options = task.options({
-      defaultLocale: 'en',
-      concat: false,
-      dest: 'dist/',
-      prefix: 'output',
-      ext: '.json',
-      localePattern: /^.+-(\w+).resx$/,
-      localeExtractor: localeExtractor
-    });
+
+    var createFileDescriptor = function(filename) {
+      var locale = options.localeExtractor(filename, options);
+      var namespace = filename.replace('.resx', '').replace(options.namespaceFrom, '').replace('.' + locale, '');
+
+      namespace = namespace.split('/');
+
+      return {src: filename, locale: locale, dest: rename(filename, options), namespace: namespace};
+    };
+
 
     var filesByLocale =
       _.chain(this.filesSrc)
-        .map(function(thisFile){return {src: thisFile, locale: options.localeExtractor(thisFile, options), dest: rename(thisFile, options)}})
-        .groupBy(function(destObj){return destObj.locale})
+        .map(function(thisFile){
+          return createFileDescriptor(thisFile);
+        })
+        .groupBy(function(destObj){ return destObj.locale; })
         .value();
-
 
     _.each(filesByLocale, function(destObjs, locale){
       var allMerged =
-        _.chain(destObjs)
-          .map(function(destObj){
-            return parseFile(grunt.file.read(destObj.src));
-          })
-          .reduce(function(merged,cur){return _.extend(merged,cur);},{})
-          .value();
+        _(destObjs).reduce(function(merged,destObj){
+          var contents = parseFile(grunt.file.read(destObj.src));
+          var positionOnTree = merged;
+
+          for(var i=0; i< destObj.namespace.length; i++) {
+            if(!positionOnTree[destObj.namespace[i]]) {
+              positionOnTree[destObj.namespace[i]] = {};
+            }
+            positionOnTree = positionOnTree[destObj.namespace[i]];
+          }
+
+          _.extend(positionOnTree, contents);
+
+          return merged;
+        },{});
 
       if (options.concat){
         var cur = {};
@@ -78,7 +99,7 @@ module.exports = function(grunt) {
 
     parser.parseString(fileContent, function (err, result) {
         if (err){
-          grunt.error.writeln("error:"+err);
+          grunt.error.writeln('error:'+err);
           return;
         }
         if (result && result.root){
