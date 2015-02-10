@@ -1,4 +1,4 @@
-# grunt-resx2json
+# grunt-resx-2-structured-json
 
 > Converts a set of localization files in the resx file format to a set of JSON dictionaries
 
@@ -23,34 +23,67 @@ Task targets, files and options may be specified according to the grunt [Configu
 
 ### Options
 
+#### namespaceFrom
+Type: 'String'
+Default: `''`
+
+In creating the output, each underlying folder from the 'namespaceFrom' root will be treated as a
+namespace for the sake of JSON generation.
+
+For example:
+
+Given a folder structure like so:
+
+```shell
+├── Localization/
+│   ├── base-de.resx
+│   ├── base-fr.resx
+│   ├── base.resx
+|   ├── Home/
+|   |   ├── stuff.resx
+|   |   ├── stuff-de.resx
+|   |   └── stuff-fr.resx
+```
+
+Where namespace from is set to `Localization\`
+
+Then an object like so would be created:
+
+```javascript
+{
+  //keys from base.resx would be here
+  Home: {
+    //keys from Home/stuff.resx would be here
+  }
+}
+```
+
 #### defaultLocale
 
-Type: `String`  
-Default: `en`  
+Type: `String`
+Default: `en`
 
 The locale that a file will be assumed to represent should the _languagePattern_ not parse appropriately.
 
-
 #### concat
 
-Type: `Boolean`  
-Default: `false`  
+Type: `Boolean`
+Default: `false`
 
 Set `concat` to `true` to have all of the different locales be concated into a single output file, with their respective `locale` being the key and the value being the set of all corresponding values.
 
 The default is false, which will then output a file per locale with the file format `dest`-`locale``ext`
 
-
 #### dest
 
-Type: `String`  
-Default: `dist/`  
+Type: `String`
+Default: `dist/`
 
 The output folder for the processed files.
 
 ### prefix
-Type: `String`  
-Defaut: `output`  
+Type: `String`
+Defaut: `output`
 
 When `concat` is `false`, this serves as the base name for the output, which will have the pattern `prefix`-`locale``ext`.
 
@@ -58,28 +91,26 @@ When `concat` is `true`, the output will be in the format `prefix``ext`.
 
 #### ext
 
-Type: 'String'  
-Default: '.json'  
+Type: 'String'
+Default: '.json'
 
 The default extension for the output files to have.
 
 #### languagePattern
 
-Type: `RegExp`  
-Default: `/^.+-(\w+).resx$/`  
+Type: `RegExp`
+Default: `/^.+-(\w+).resx$/`
 
 A regular expression with a single capture group that extracts the appropriate locale
 
-
 #### localeExtractor
 
-Type: `Function`  
-Default: `function(src, options){return dest}`  
+Type: `Function`
+Default: `function(src, options){return dest}`
 
 A function given with arguments _(src,options)_ that is responsible for providing the locale for the given file.
 
 This is used by the plugin to group all the files of a single locale.
-
 
 ### Usage examples
 
