@@ -1,7 +1,7 @@
 {
   "name": "grunt-resx-2-structured-json",
   "description": "Changing resx files to structured, nested json files",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "homepage": "https://github.com/duereg/grunt-resx2json",
   "repository": {
     "type": "git",
