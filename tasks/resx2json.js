@@ -22,8 +22,10 @@ module.exports = function(grunt) {
       dest: 'dist/',
       prefix: 'output',
       ext: '.json',
+      namespaceSeparator: '_',
       localePattern: /[a-z]{2}-[A-Z]{2}/,
-      localeExtractor: localeExtractor
+      localeExtractor: localeExtractor,
+      afterParseLocale: undefined
     });
 
     var rename = function(src, options){
@@ -44,6 +46,34 @@ module.exports = function(grunt) {
       namespace = namespace.split('/');
 
       return {src: filename, locale: locale, dest: rename(filename, options), namespace: namespace};
+    };
+
+    function processNestedNameSpaces(tree){
+      var treeKeys = Object.keys(tree);
+
+      var foundNestedNamespaces = treeKeys.filter(function(key){
+        return key.indexOf(options.namespaceSeparator) != -1;
+      });
+
+      for (var i = 0; i < foundNestedNamespaces.length; i++) {
+        var namespace = foundNestedNamespaces[i];
+        var namespaceLevels = namespace.split(options.namespaceSeparator);
+        var length = namespaceLevels.length;
+        var currentNode = tree;
+        for (var j = 0; j < length; j++) {
+          var property = namespaceLevels[j];
+
+          if(j != (length -1)){
+            if(!currentNode[property]) currentNode[property] = {};
+            currentNode = currentNode[property];
+          } else {
+              currentNode[property] = tree[namespace];
+              delete tree[namespace];
+          }
+        }
+
+      }
+      return tree;
     };
 
     grunt.log.writeln('Found ' + this.filesSrc.length + ' files to process.');
@@ -69,10 +99,15 @@ module.exports = function(grunt) {
             positionOnTree = positionOnTree[destObj.namespace[i]];
           }
 
+          processNestedNameSpaces(contents);
           _.extend(positionOnTree, contents);
 
           return merged;
         },{});
+
+      if(options.afterParseLocale && typeof(options.afterParseLocale) === 'function'){
+        allMerged = options.afterParseLocale(allMerged);
+      }
 
       if (options.concat){
         var cur = {};
@@ -93,6 +128,7 @@ module.exports = function(grunt) {
     // Otherwise, print a success message.
     grunt.log.writeln('Finished JSON generation.');
   });
+
 
   var parseFile = function(fileContent,lang) {
     var parser = new xml2js.Parser(),
